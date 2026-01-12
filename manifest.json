@@ -6,7 +6,7 @@
   "background_color": "#0f172a",
   "display": "standalone",
   "orientation": "portrait",
-  "start_url": "/pwa_sudokuLovable/",
+  "start_url": "/",
   "icons": [
     {
       "src": "pwa-192x192.png",

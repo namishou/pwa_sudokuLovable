@@ -1,7 +1,8 @@
-const CACHE_NAME = 'ai-numpre-v1';
+const CACHE_NAME = 'ai-numpre-v2';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/404.html',
   '/manifest.json',
   '/pwa-192x192.png',
   '/pwa-512x512.png',
@@ -38,21 +39,31 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  // Handle navigation requests (HTML pages) - always serve index.html for SPA
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('/index.html').then((response) => {
+        return response || fetch('/index.html');
+      }).catch(() => {
+        return caches.match('/index.html');
+      })
+    );
+    return;
+  }
+
+  // Handle other requests with cache-first strategy
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Return cached version or fetch from network
         if (response) {
           return response;
         }
 
         return fetch(event.request).then((response) => {
-          // Don't cache if not a valid response
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
 
-          // Clone the response
           const responseToCache = response.clone();
 
           caches.open(CACHE_NAME)
@@ -64,8 +75,7 @@ self.addEventListener('fetch', (event) => {
         });
       })
       .catch(() => {
-        // Return offline fallback if available
-        return caches.match('/');
+        return caches.match('/index.html');
       })
   );
 });
