@@ -1,1 +1,71 @@
-if(!self.define){let e,i={};const s=(s,n)=>(s=new URL(s+".js",n).href,i[s]||new Promise(i=>{if("document"in self){const e=document.createElement("script");e.src=s,e.onload=i,document.head.appendChild(e)}else e=s,importScripts(s),i()}).then(()=>{let e=i[s];if(!e)throw new Error(`Module ${s} didn’t register its module`);return e}));self.define=(n,o)=>{const r=e||("document"in self?document.currentScript.src:"")||location.href;if(i[r])return;let t={};const l=e=>s(e,r),f={module:{uri:r},exports:t,require:l};i[r]=Promise.all(n.map(e=>f[e]||l(e))).then(e=>(o(...e),t))}}define(["./workbox-1d305bb8"],function(e){"use strict";self.skipWaiting(),e.clientsClaim(),e.precacheAndRoute([{url:"pwa-512x512.png",revision:"e784126d7d556e34197a5456f553f2b7"},{url:"pwa-192x192.png",revision:"60e214c483415de1b7a0f783e63404bc"},{url:"placeholder.svg",revision:"35707bd9960ba5281c72af927b79291f"},{url:"index.html",revision:"87713def08f4e4dab72b26b1c59e1e7f"},{url:"favicon.ico",revision:"9f504444f85a5af2eef9264b02ae40be"},{url:"assets/workbox-window.prod.es5-vqzQaGvo.js",revision:null},{url:"assets/index-DXFQ4Olu.css",revision:null},{url:"assets/index-C9GweBHu.js",revision:null},{url:"favicon.ico",revision:"9f504444f85a5af2eef9264b02ae40be"},{url:"pwa-192x192.png",revision:"60e214c483415de1b7a0f783e63404bc"},{url:"pwa-512x512.png",revision:"e784126d7d556e34197a5456f553f2b7"},{url:"manifest.webmanifest",revision:"15f8c288dc09c06307b5f6049a82878d"}],{}),e.cleanupOutdatedCaches(),e.registerRoute(new e.NavigationRoute(e.createHandlerBoundToURL("index.html"))),e.registerRoute(/^https:\/\/fonts\.googleapis\.com\/.*/i,new e.CacheFirst({cacheName:"google-fonts-cache",plugins:[new e.ExpirationPlugin({maxEntries:10,maxAgeSeconds:31536e3}),new e.CacheableResponsePlugin({statuses:[0,200]})]}),"GET")});
+const CACHE_NAME = 'ai-numpre-v1';
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/pwa-192x192.png',
+  '/pwa-512x512.png',
+  '/favicon.ico'
+];
+
+// Install event - cache assets
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('Opened cache');
+        return cache.addAll(urlsToCache);
+      })
+      .then(() => self.skipWaiting())
+  );
+});
+
+// Activate event - cleanup old caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
+// Fetch event - serve from cache, fallback to network
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        // Return cached version or fetch from network
+        if (response) {
+          return response;
+        }
+
+        return fetch(event.request).then((response) => {
+          // Don't cache if not a valid response
+          if (!response || response.status !== 200 || response.type !== 'basic') {
+            return response;
+          }
+
+          // Clone the response
+          const responseToCache = response.clone();
+
+          caches.open(CACHE_NAME)
+            .then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+
+          return response;
+        });
+      })
+      .catch(() => {
+        // Return offline fallback if available
+        return caches.match('/');
+      })
+  );
+});
