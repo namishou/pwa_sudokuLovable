@@ -1,12 +1,13 @@
-const CACHE_NAME = 'ai-numpre-v2';
+const CACHE_NAME = 'ai-numpre-v3';
+const BASE_PATH = '/pwa_sudokuLovable/';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/404.html',
-  '/manifest.json',
-  '/pwa-192x192.png',
-  '/pwa-512x512.png',
-  '/favicon.ico'
+  BASE_PATH,
+  BASE_PATH + 'index.html',
+  BASE_PATH + '404.html',
+  BASE_PATH + 'manifest.json',
+  BASE_PATH + 'pwa-192x192.png',
+  BASE_PATH + 'pwa-512x512.png',
+  BASE_PATH + 'favicon.ico'
 ];
 
 // Install event - cache assets
@@ -42,10 +43,10 @@ self.addEventListener('fetch', (event) => {
   // Handle navigation requests (HTML pages) - always serve index.html for SPA
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      caches.match('/index.html').then((response) => {
-        return response || fetch('/index.html');
+      caches.match(BASE_PATH + 'index.html').then((response) => {
+        return response || fetch(BASE_PATH + 'index.html');
       }).catch(() => {
-        return caches.match('/index.html');
+        return caches.match(BASE_PATH + 'index.html');
       })
     );
     return;
@@ -75,7 +76,7 @@ self.addEventListener('fetch', (event) => {
         });
       })
       .catch(() => {
-        return caches.match('/index.html');
+        return caches.match(BASE_PATH + 'index.html');
       })
   );
 });
